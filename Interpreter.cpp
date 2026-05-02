@@ -1,17 +1,3 @@
-/*
- * File Name: <codeFilename>
- * Programmer: <firstName> <lastName>
- * Course: <course>
- * Date: <currentDate>
- * Path: <pathOfFile>
- * Description: <descriptionOfProgram>
- * Compile: g++ <codeFilename> -o <outputFilename>
- * Execute: ./<outputFilename>
- * Additional Files: 
- * Generates File: 
- * Help Received: 
- */
-
 //Included headers
 #include <vector>
 #include <iostream>
