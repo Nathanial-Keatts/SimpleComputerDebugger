@@ -533,7 +533,14 @@ void printHelp(std::string command)
         << "    :cbl    Clears all breakpoints for specific source lines\n"
         << "    :cbm    Clears all breakpoints for specific machine code instructions\n"
         << "    :cbmw   Clears all breakpoints for memory writes\n"
-        << "    :cbrx   Clears all breakpoints for register reads and writes\n";
+        << "    :cbrx   Clears all breakpoints for register reads and writes\n"
+        << "\n"
+        << "p: Prints data. Without an extra parameter, it will print PC, IR, and R0-R7. You can also include a specific value to print.\n"
+        << "    :p rn  Prints the contents of register n in hex.\n"
+        << "    :p mn  Prints the contents of memory at address n in hex.\n"
+        << "    :p ir  Prints the current instruction.\n"
+        << "    :p pc  Prints the program counter.\n";
+
     }
     else
     {
