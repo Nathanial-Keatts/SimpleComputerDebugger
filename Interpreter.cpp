@@ -501,7 +501,7 @@ void printHelp(std::string command)
     {
     std::cout << "Help:\n"
         << "Command           | Short Description\n"
-        << "h <command>       | Shows general help or specific help for an input command.\n"
+        << "h <command>       | Shows general help or specific help for an input command <Not implemented>.\n"
         << "s                 | Step through 1 line of code.\n"
         << "r                 | Start execution until next breakpoint or trivial infinite loop.\n"
         << "b <pc value>      | Create a breakpoint at a specific pc value.\n"
@@ -517,7 +517,23 @@ void printHelp(std::string command)
         << "lm <filename>     | Loads a raw machine code file into instruction memory.\n"
         << "la <filename>     | Loads an assembly file. Assembles and stores into instruction memory.\n"
         << "x                 | Resets the contents of the Simple Computer.\n"
-        << "q                 | Closes the emulator.\n";
+        << "q                 | Closes the emulator.\n"
+        << "\nSince the specific help isn't implemented (time constraints) here is an explanation of the weirdest commands:\n"
+        << "ba: The actiion has the following format abn. The meaning of these letters are as follow:\n"
+        << "    a: The area to monitor, either r for register or m for memory.\n"
+        << "    b: The action to monitor for, either r for read, w for write, or x for both.\n"
+        << "    n: The address or register number to monitor.\n"
+        << "These values are directly concatenated. For example, to break on a memory write to address 6 you would write:\n"
+        << "    :ba mw6\n"
+        << "\n"
+        << "cb: This clears a category of breakpoints. Time constraints made the only way to remove breakpoints to be entire groups.\n"
+        << "    To clear a group, you append the letter of the type of breakpoint. Essentially, take th command to add a breakpoint and remove b.\n"
+        << "    For action breakpoints, you choose the type of action, similar to the ba command. Some examples:\n"
+        << "    :cb     Clears all pc breakpoints\n"
+        << "    :cbl    Clears all breakpoints for specific source lines\n"
+        << "    :cbm    Clears all breakpoints for specific machine code instructions\n"
+        << "    :cbmw   Clears all breakpoints for memory writes\n"
+        << "    :cbrx   Clears all breakpoints for register reads and writes\n";
     }
     else
     {
