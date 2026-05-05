@@ -30,6 +30,7 @@ struct SimpleComputer
     //Memory
     std::vector<uint16_t> instructionMemory;
     std::vector<uint16_t> dataMemory;
+    std::vector<uint16_t> initialDataMemory;
 
     SimpleComputer(const std::string& instructionFilename = "", const std::string& dataFilename = "")
     {
@@ -55,8 +56,7 @@ struct SimpleComputer
     {
         this->pc = 0;
         this->registers = std::vector<uint16_t>(8, 0);
-        this->instructionMemory = std::vector<uint16_t>(0xFFFF+1, 0);
-        this->dataMemory = std::vector<uint16_t>(0xFFFF+1, 0);
+        this->dataMemory = this->initialDataMemory;
         return;
     }
     void loadData(const std::string& filename)
@@ -86,6 +86,7 @@ struct SimpleComputer
                 }
             }
         }
+        this->initialDataMemory = this->dataMemory;
     }
     void loadInstructions(const std::vector<uint16_t>& machineCode)
     {
@@ -500,52 +501,165 @@ void printHelp(std::string command)
     if(command == "")
     {
     std::cout << "Help:\n"
-        << "Command           | Short Description\n"
-        << "h <command>       | Shows general help or specific help for an input command <Not implemented>.\n"
-        << "s                 | Step through 1 line of code.\n"
-        << "r                 | Start execution until next breakpoint or trivial infinite loop.\n"
-        << "b <pc value>      | Create a breakpoint at a specific pc value.\n"
-        << "bm <machine code> | Create a breakpoint for a specific machine code.\n"
-        << "ba <action>       | Create a breakpoint on a specific memory/register read/write.\n"
-        << "bl <source line>  | Create a breakpoint on a specific line of the assembly source code.\n"
-        << "cb<category>      | Clears all breakpoints of a specific category.\n"
-        << "p <variable>      | Prints register, program counter, and instruction register contents. <variable> selects a specific output.\n"
-        << "d                 | Shows the disassembled line that the program counter is currently on.\n"
-        << "c <bound>         | Shows multiple dissassembled lines with <bound> before and <bound> after the current line.\n"
-        << "cs <bound>        | Shows source file lines <bound> distance from the current executing line.\n"
-        << "v <variable>      | Sets the value of a variable.\n"
-        << "lm <filename>     | Loads a raw machine code file into instruction memory.\n"
-        << "la <filename>     | Loads an assembly file. Assembles and stores into instruction memory.\n"
-        << "x                 | Resets the contents of the Simple Computer.\n"
-        << "q                 | Closes the emulator.\n"
-        << "\nSince the specific help isn't implemented (time constraints) here is an explanation of the weirdest commands:\n"
-        << "ba: The actiion has the following format abn. The meaning of these letters are as follow:\n"
-        << "    a: The area to monitor, either r for register or m for memory.\n"
-        << "    b: The action to monitor for, either r for read, w for write, or x for both.\n"
-        << "    n: The address or register number to monitor.\n"
-        << "These values are directly concatenated. For example, to break on a memory write to address 6 you would write:\n"
-        << "    :ba mw6\n"
-        << "\n"
-        << "cb: This clears a category of breakpoints. Time constraints made the only way to remove breakpoints to be entire groups.\n"
-        << "    To clear a group, you append the letter of the type of breakpoint. Essentially, take th command to add a breakpoint and remove b.\n"
-        << "    For action breakpoints, you choose the type of action, similar to the ba command. Some examples:\n"
-        << "    :cb     Clears all pc breakpoints\n"
-        << "    :cbl    Clears all breakpoints for specific source lines\n"
-        << "    :cbm    Clears all breakpoints for specific machine code instructions\n"
-        << "    :cbmw   Clears all breakpoints for memory writes\n"
-        << "    :cbrx   Clears all breakpoints for register reads and writes\n"
-        << "\n"
-        << "p: Prints data. Without an extra parameter, it will print PC, IR, and R0-R7. You can also include a specific value to print.\n"
-        << "    :p rn  Prints the contents of register n in hex.\n"
-        << "    :p mn  Prints the contents of memory at address n in hex.\n"
-        << "    :p ir  Prints the current instruction.\n"
-        << "    :p pc  Prints the program counter.\n";
+        << "Command              | Short Description\n"
+        << "h <command>          | Shows general help or specific help for the input command <command>.\n"
+        << "s                    | Step through 1 line of code.\n"
+        << "r                    | Start execution until next breakpoint or trivial infinite loop.\n"
+        << "b <pc value>         | Create a breakpoint at a specific pc value.\n"
+        << "bm <machine code>    | Create a breakpoint for a specific machine code.\n"
+        << "ba <action>          | Create a breakpoint on a specific memory/register read/write.\n"
+        << "bl <source line>     | Create a breakpoint on a specific line of the assembly source code.\n"
+        << "cb<category>         | Clears all breakpoints of a specific category.\n"
+        << "p <variable>         | Prints register, program counter, and instruction register contents. <variable> selects a specific output.\n"
+        << "d                    | Shows the disassembled line that the program counter is currently on.\n"
+        << "c <bound>            | Shows multiple dissassembled lines with <bound> before and <bound> after the current line.\n"
+        << "cs <bound>           | Shows source file lines <bound> distance from the current executing line.\n"
+        << "v <variable> <value> | Sets the value of a variable.\n"
+        << "lm <filename>        | Loads a raw machine code file into instruction memory.\n"
+        << "la <filename>        | Loads an assembly file. Assembles and stores into instruction memory.\n"
+        << "x                    | Resets the contents of the Simple Computer.\n"
+        << "q                    | Closes the debugger.\n";
 
+    }
+    else if(command == "h")
+    {
+        std::cout << "h <command>: Help\n"
+            << "    Without a parameter, shows general help for every command. If a command is included, more specific help is provided.\n";
+    }
+    else if(command == "s")
+    {
+        std::cout << "s: Step\n"
+            << "    Executes a single line of machine code.\n";
+    }
+    else if(command == "r")
+    {
+        std::cout << "r: Run\n"
+            << "    Starts executing machine code until either a breakpoint is reached or a trivial infinite loop is reached.\n"
+            << "    A trivial infinite loop continually jumps to the same point making the program counter never iterate.\n";
+    }
+    else if(command == "b")
+    {
+        std::cout << "b <pc value>: Make Breakpoint\n"
+            << "    Creates a breakpoint that stops execution if the program counter matches <pc value>.\n"
+            << "    *For every breakpoint, the line that triggers the breakpoint is not executed.*\n"
+            << "    *To trigger this line you can use the step command after the breakpoint is reached.*\n";
+    }
+    else if(command == "bm")
+    {
+        std::cout << "bm <machine code>: Create Machine Code Breakpoint\n"
+            << "    Creates a breakpoint that stops execution if the machine instruction about to be executed matches <machine code>.\n"
+            << "    *For every breakpoint, the line that triggers the breakpoint is not executed.*\n"
+            << "    *To trigger this line you can use the step command after the breakpoint is reached.*\n";
+    }
+    else if(command == "ba")
+    {
+        std::cout << "ba <action>: Create Breakpoint on Action\n"
+            << "    Creates a breakpoint that stops execution if the next line would trigger <action>.\n"
+            << "    The format of <action> is given below\n"
+            << "    ABn\n"
+            << "    A is the area to monitor. It can be either r (registers) or m(memory).\n"
+            << "    B is the action to listen for. It can be either r (read), w (write), or x (read or write).\n"
+            << "    n is the index to monitor. It can be any number, but the ranges for each area are below:\n"
+            << "    r [0, 7], m [0, 65535]\n"
+            << "    Action will have these appended directly together with no spacing. Some examples:\n"
+            << "        :ba mw6 //Break on memory write to address 6\n"
+            << "        :ba rr3 //Break on read from register 3\n"
+            << "        :ba rx0x10 //Break on memory write to address 0x10 (decimal 16)\n"
+            << "    A value outside of these ranges will still create a breakpoint, however it will never trigger.\n"
+            << "    *For every breakpoint, the line that triggers the breakpoint is not executed.*\n"
+            << "    *To trigger this line you can use the step command after the breakpoint is reached.*\n";
+    }
+    else if(command == "bl")
+    {
+        std::cout << "bl <source line>: Create Breakpoint on Source Line\n"
+            << "    Creates a breakpoint that stops execution if the line about to be executed is <source line> in the source assembly file.\n"
+            << "    *For every breakpoint, the line that triggers the breakpoint is not executed.*\n"
+            << "    *To trigger this line you can use the step command after the breakpoint is reached.*\n"
+            << "    **Any command that reads the source assembly file requires the source file to be loaded. If this isn't the case, the command will give an error.**\n";
+
+    }
+    else if(command == "cb")
+    {
+        std::cout << "cb<type>: Clear Breakpoints\n"
+            << "    Clears all breakpoints of a specific type matching <type>.\n"
+            << "    The format for for the command is as follows:\n"
+            << "    :cb     //Clears all pc breakpoints\n"
+            << "    :cba    //Clears all breakpoints\n"
+            << "    :cbl    //Clears all breakpoints for specific source lines\n"
+            << "    :cbm    //Clears all breakpoints for specific machine code instructions\n"
+            << "    :cbmr   //Clears all breakpoints for memory reads\n"
+            << "    :cbmw   //Clears all breakpoints for memory writes\n"
+            << "    :cbmx   //Clears all breakpoints for memory reads and writes\n"
+            << "    :cbrr   //Clears all breakpoints for register reads\n"
+            << "    :cbrw   //Clears all breakpoints for register writes\n"
+            << "    :cbrx   //Clears all breakpoints for register reads and writes\n";
+    }
+    else if(command == "p")
+    {
+        std::cout << "p <variable>: Print\n"
+            << "    Prints the specified variable. If no variable is specified, prints PC, IR, and R0-7\n"
+            << "    Valid variables are:\n"
+            << "    rx //Register x, where x is [0, 7]\n"
+            << "    mx //Memory address x, where x is [0, 65535]\n"
+            << "    pc //The program counter\n"
+            << "    ir //The instruction register\n";
+    }
+    else if(command == "d")
+    {
+        std::cout << "d: Disassemble\n"
+            << "    Disassembles the current line and prints it.\n"
+            << "    This does not use the source file and can be performed on any machine code.\n";
+    }
+    else if(command == "c")
+    {
+        std::cout << "c <bound>: Context\n"
+            << "    Disassembles the current line and <bound lines before and after the current line.\n"
+            << "    This does not use the source file and can be performed on any machine code.\n";
+    }
+    else if(command == "cs")
+    {
+        std::cout << "s: Step\n"
+            << "    Displays the current line from the source file and <bound> lines before and after the current line.\n"
+            << "    *This uses the source assembly file. If the source assembly file was not loaded this command will not work.*\n";
+    }
+    else if(command == "v")
+    {
+        std::cout << "v <variable> <value>: Set Value\n"
+            << "    Sets the value of a variable.\n"
+            << "    The variable can be any of the following:\n"
+            << "    rx //Register x, where x is [0, 7]\n"
+            << "    mx //Memory address x, where x is [0, 65535]\n"
+            << "    pc //The program counter\n"
+            << "    <value> will be stored into <variable>.\n";
+    }
+    else if(command == "lm")
+    {
+        std::cout << "lm <filename>: Load Machine Code\n"
+            << "    Opens a machine code file and loads it into the Simple Computer.\n"
+            << "    This operation supports @ to change the location of the code and // for comments.\n"
+            << "    *This command will clear any source file breakpoints and invalidate the use of cs until an assembly source file is loaded.*\n"
+            << "    **If the file successfully opens, this will reset the program counter to 0.**\n";
+    }
+    else if(command == "la")
+    {
+        std::cout << "s: Step\n"
+            << "    Opens an assembly code file, assembles it, and loads it into the Simple Computer.\n"
+            << "    *This command will store the source file and allow use of the cs command.*\n"
+            << "    **If the file successfully opens, this will reset the program counter to 0.**\n";
+    }
+    else if(command == "x")
+    {
+        std::cout << "x: Reset\n"
+            << "    Resets the program counter to 0 and fills data memory with its initial values.\n";
+    }
+    else if(command == "q")
+    {
+        std::cout << "q: Quit\n"
+            << "    Closes the debugger.\n";
     }
     else
     {
-        std::cout << "This feature has not been implemented and may never be. It is nearly 2 am and I want to sleep.\n";
-        //std::cout << "Invalid command. Type 'h' for a list of valid commands.\n";
+        std::cout << "Invalid command '" << command << "'. Type 'h' for a list of valid commands.\n";
     }
 
 
@@ -871,6 +985,16 @@ int main(int argc, char* args[])
                 if(command.substr(2) == "")
                 {
                     pcBreakpoints.clear();
+                }
+                else if(command.substr(2) == "a")
+                {
+                    pcBreakpoints.clear();
+                    mcBreakpoints.clear();
+                    mrBreakpoints.clear();
+                    mwBreakpoints.clear();
+                    rrBreakpoints.clear();
+                    rwBreakpoints.clear();
+                    slBreakpoints.clear();
                 }
                 else if(command.substr(2) == "m")
                 {

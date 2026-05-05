@@ -404,3 +404,45 @@ std::pair<std::vector<uint16_t>, std::vector<size_t>> assembleFile(const std::st
     }
     return(std::pair<std::vector<uint16_t>, std::vector<size_t>>{machineCode, fileCorrelations});
 }
+
+std::vector<std::string> disassembleFile(const std::string& filename, std::vector<std::pair<std::string, std::pair<uint16_t, operandGroupID>>> instructions = simpleComputerInstructions)
+{
+    //Variables WOW
+    std::ifstream machineFile(filename);
+    std::string data;
+    std::vector<std::string> lines;
+    std::vector<std::string> assemblyCode;
+
+    //Opens the file
+    if(machineFile.is_open())
+    {
+        //Loads each line into 
+        size_t correlation = 0;
+        while(getline(machineFile, data))
+        {
+            //Removes comments
+            size_t s = data.find("//");
+            if(s != data.npos)
+            {
+                data.erase(s);
+            }
+
+            s = 0;
+            skipWhitespace(s, data);
+            if(s != data.npos)
+            {
+                data = data.substr(s);
+            }
+            if(data.size())
+            {
+                lines.push_back(data);
+            }
+            correlation++;
+        }
+        for(size_t i = 0; i < lines.size(); i++)
+        {
+            assemblyCode.push_back(disassembleLine(std::stoi(lines[i])));
+        }
+    }
+    return(assemblyCode);
+}
